@@ -43,7 +43,11 @@
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
 
-(define *prim-proc-names* '(+ - * add1 sub1 cons =))
+(define *prim-proc-names* 
+  '(+ - * / add1 sub1 = < <= > >= zero? not cons car cdr list null? assq eq? equal?
+  atom? length list->vector list? pair? procedure? vector->list vector make-vector
+  make-list vector->ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
+  display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr))
 
 (define init-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -55,19 +59,71 @@
 ; Usually an interpreter must define each 
 ; built-in procedure individually.  We are "cheating" a little bit.
 
+; TODO - tweak cases to handle when its not just 2 arguments
 (define apply-prim-proc
   (lambda (prim-proc args)
     (case prim-proc
       [(+) (+ (1st args) (2nd args))]
       [(-) (- (1st args) (2nd args))]
       [(*) (* (1st args) (2nd args))]
+      [(/) (/ (1st args) (2nd args))]
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
-      [(cons) (cons (1st args) (2nd args))]
       [(=) (= (1st args) (2nd args))]
+      [(<) (< (1st args) (2nd args))]
+      [(<=) (<= (1st args) (2nd args))]
+      [(>) (> (1st args) (2nd args))]
+      [(>=) (>= (1st args) (2nd args))]
+      [(zero?) (zero? args)]
+      [(not) (not args)]
+      [(cons) (cons (1st args) (2nd args))]
+      [(car) (1st args)]
+      [(cdr) (2nd args)]
+      [(list) (list args)]
+      [(null?) (null? args)]
+      [(assq) (assq (1st args) (2nd args))]
+      [(eq?) (eq? (1st args) (2nd args))]
+      [(equal?) (equal? (1st args) (2nd args))]
+      [(atom?) (atom? args)]
+      [(length) (length args)]
+      [(list->vector) (list->vector args)]
+      [(list?) (list? args)]
+      [(pair?) (pair? args)]
+      [(procedure?) (procedure? args)]
+      [(vector->list) (vector->list args)]
+      [(vector) (vector args)]
+      [(make-vector) (make-vector (1st args) (2nd args))]
+      [(make-list) (make-list (1st args) (2nd args))]
+      [(vector-ref) (vector-ref (1st args) (2nd args))]
+      [(list-ref) (list-ref (1st args) (2nd args))]
+      [(vector?) (vector? args)]
+      [(number?) (number? args)]
+      [(symbol?) (symbol? args)]
+      [(set!-car) (set!-car (1st args) (2nd args))]
+      [(set!-cdr) (set!-cdr (1st args) (2nd args))]
+      [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
+      [(display) (display args)]
+      [(newline) (newline args)]
+      [(caar) (caar args)]
+      [(cadr) (cadr args)]
+      [(cdar) (cdar args)]
+      [(caaar) (caaar args)]
+      [(caadr) (caadr args)]
+      [(cadar) (cadar args)]
+      [(cdaar) (cdaar args)]
+      [(caddr) (caddr args)]
+      [(cdadr) (cdadr args)]
+      [(cddar) (cddar args)]
+      [(cdddr) (cdddr args)]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))
+
+(define low-prim-proc
+  (lambda (prim-proc args base-case)
+    (if (null? args)
+      base-case
+      (prim-proc args (low-prim-proc prim-proc args base-case)))))
 
 (define rep      ; "read-eval-print" loop.
   (lambda ()
@@ -79,7 +135,9 @@
       (rep))))  ; tail-recursive, so stack doesn't grow.
 
 (define eval-one-exp
-  (lambda (x) (top-level-eval (parse-exp x))))
+  (lambda (x)
+    (display (parse-exp x)) 
+    (top-level-eval (parse-exp x))))
 
 
 

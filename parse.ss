@@ -79,6 +79,7 @@
             (begin (check-let datum) (let-exp (car datum) (parse-exp (cadr datum)) (map parse-exp (cddr datum)))))
           ((eqv? (car datum) 'set!) 
             (begin (check-set! datum) (set!-exp (cadr datum) (parse-exp (caddr datum)))))
+          ;; TODO - fix quotes defaulting to app expressions
           (else 
             (app-exp
             (map parse-exp datum)))))
@@ -107,38 +108,6 @@
       (set!-exp (id new-id)
         (list 'set! id (unparse-exp new-id))))))
 
-;; Helpers
-;; TODO - refactor the lambda code
-;;      - improve error messages
-(define check-set!
-  (lambda (exp)
-    (if (and (= (length exp) 3) (symbol? (cadr exp)) (parse-exp (caddr exp)))
-      '()
-      (eopl:error 'parse-exp "set! argument/size error: ~s" exp))))
-
-(define check-let
-  (lambda (exp)
-    (if (and (pair? exp) (>= (length exp) 3) (check-let-assignments (cadr exp)))
-      '()
-      (eopl:error 'parse-exp "let argument/size error: ~s" exp))))
-
-(define check-named-let
-  (lambda (exp)
-    (if (and (pair? exp) (symbol? (cadr exp)) (> (length exp) 3) (check-let-assignments (caddr exp)))
-      '()
-      (eopl:error 'parse-exp "named-let argument/size error: ~s" exp))))
-
-(define check-let-assignments
-  (lambda (exp)
-    (if (null? exp) #t
-      (and (proper-list? exp) (proper-list? (car exp)) (= (length (car exp)) 2) (symbol? (caar exp)) (parse-exp (cadar exp))
-        (check-let-assignments (cdr exp))))))
-
-(define proper-list?
-  (lambda (ls)
-    (cond ((null? ls) #t)
-      ((pair? ls) (proper-list? (cdr ls)))
-      (else #f))))
 
 
 
