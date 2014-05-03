@@ -1,5 +1,19 @@
 ; top-level-eval evaluates a form in the global environment
 
+(define rep      ; "read-eval-print" loop.
+  (lambda ()
+    (display "--> ")
+    ;; notice that we don't save changes to the environment...
+    (let ([answer (top-level-eval (parse-exp (read)))])
+      ;; TODO: are there answers that should display differently?
+      (eopl:pretty-print answer) (newline)
+      (rep))))  ; tail-recursive, so stack doesn't grow.
+
+(define eval-one-exp
+  (lambda (x)
+    ;(display (parse-exp x)) 
+    (top-level-eval (parse-exp x))))
+
 (define top-level-eval
   (lambda (form)
     ; later we may add things that are not expressions.
@@ -16,7 +30,12 @@
       	   (lambda (x) x) ; procedure to call if id is in the environment 
            (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
 		          "variable not found in environment: ~s"
-			   id)))] 
+			   id)))]
+      [let-exp (let-type vars body)
+        (apply begin-eval 
+          (map (lambda (x) (eval-exp x (extend-env vars 
+            (map (lambda (x) (eval-exp x env)) values) env)))
+          body))] 
       [app-exp (rator rands)
         (let ([proc-value (eval-exp rator)]
               [args (eval-rands rands)])
@@ -29,18 +48,11 @@
   (lambda (rands)
     (map eval-exp rands)))
 
-;  Apply a procedure to its arguments.
-;  At this point, we only have primitive procedures.  
-;  User-defined procedures will be added later.
-
-(define apply-proc
-  (lambda (proc-value args)
-    (cases proc-val proc-value
-      [prim-proc (op) (apply-prim-proc op args)]
-			; You will add other cases
-      [else (error 'apply-proc
-                   "Attempt to apply bad procedure: ~s" 
-                    proc-value)])))
+(define begin-eval
+  (case-lambda
+   [(x) x]
+   [(x . rest)
+      (apply begin-eval rest)]))
 
 (define *prim-proc-names* 
   '(+ - * / add1 sub1 = < <= > >= zero? not cons car cdr list null? assq eq? equal?
@@ -55,17 +67,30 @@
           *prim-proc-names*)
      (empty-env)))
 
+;  Apply a procedure to its arguments.
+;  At this point, we only have primitive procedures.  
+;  User-defined procedures will be added later.
+
+(define apply-proc
+  (lambda (proc-value args)
+    (cases proc-val proc-value
+      [prim-proc (op) (apply-prim-proc op args)]
+			; You will add other cases
+      [else (error 'apply-proc
+                   "Attempt to apply bad procedure: ~s" 
+                    proc-value)])))
+
 ; Usually an interpreter must define each 
 ; built-in procedure individually.  We are "cheating" a little bit.
 
-; TODO - tweak cases to handle when its not just 2 arguments
 (define apply-prim-proc
   (lambda (prim-proc args)
+    ;(display (list prim-proc args))
     (case prim-proc
-      [(+) (+ (1st args) (2nd args))]
-      [(-) (- (1st args) (2nd args))]
-      [(*) (* (1st args) (2nd args))]
-      [(/) (/ (1st args) (2nd args))]
+      [(+) (low-prim-proc + args 0)]
+      [(-) (low-prim-proc - args 0)]
+      [(*) (low-prim-proc * args 1)]
+      [(/) (low-prim-proc / args 1)]
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
       [(=) (= (1st args) (2nd args))]
@@ -118,28 +143,16 @@
             "Bad primitive procedure name: ~s" 
             prim-op)])))
 
+;; Helper functions
+
 (define low-prim-proc
   (lambda (prim-proc args base-case)
     (if (null? args)
       base-case
-      (prim-proc args (low-prim-proc prim-proc args base-case)))))
+      (prim-proc (1st args) (low-prim-proc prim-proc (cdr args) base-case)))))
 
-(define rep      ; "read-eval-print" loop.
-  (lambda ()
-    (display "--> ")
-    ;; notice that we don't save changes to the environment...
-    (let ([answer (top-level-eval (parse-exp (read)))])
-      ;; TODO: are there answers that should display differently?
-      (eopl:pretty-print answer) (newline)
-      (rep))))  ; tail-recursive, so stack doesn't grow.
-
-(define eval-one-exp
-  (lambda (x)
-    (display (parse-exp x)) 
-    (top-level-eval (parse-exp x))))
-
-
-
+(define identity-proc (lambda (x) x))
+(define void-proc (void))
 
 
 

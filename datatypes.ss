@@ -25,9 +25,17 @@
     (id symbol?)
     (new-id expression?))
   (let-exp
-    (let-type symbol?)
-    (vars expression?)
+    (vars list?)
+    (values list?)
     (expression listed-expression?))
+  (let*-exp
+    (vars list?)
+    (values list?)
+    (body listed-expression?))
+  (letrec-exp
+    (vars list?)
+    (values list?)
+    (body listed-expression))
   (let-named-exp
     (let-type symbol?)
     (let-name symbol?)
