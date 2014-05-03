@@ -7,24 +7,138 @@
 (define 2nd cadr)
 (define 3rd caddr)
 
-(define parse-exp         
+; Datatype for expression
+(define-datatype expression expression?  
+  (lit-exp
+    (id (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
+  (var-exp
+    (id symbol?))
+  (lambda-exp
+    (id (lambda (x) (or (null? x) (symbol? x) (pair? x))))
+    (body listed-expression?))
+  (app-exp
+    (rator (lambda (x) (map expression? x))))
+  (if-exp
+    (test expression?)
+    (then expression?))
+  (if-alt-exp
+    (test expression?)
+    (first expression?)
+    (second expression?))
+  (quote-exp
+    (data (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
+  (set!-exp
+    (id symbol?)
+    (new-id expression?))
+  (let-exp
+    (let-type symbol?)
+    (vars expression?)
+    (expression listed-expression?))
+  (let-named-exp
+    (let-type symbol?)
+    (let-name symbol?)
+    (vars expression?)
+    (expression listed-expression?))
+)
+
+
+(define listed-expression?
+  (lambda (ls)
+    (or (null? ls) (and (pair? ls) (expression? (car ls)) (listed-expression? (cdr ls))))))
+
+(define parse-exp
   (lambda (datum)
     (cond
-     [(symbol? datum) (var-exp datum)]
-     [(number? datum) (lit-exp datum)]
-     [(pair? datum)
-      (cond
-       
-       [else (app-exp (parse-exp (1st datum))
-		      (map parse-exp (cdr datum)))])]
-     [else (eopl:error 'parse-exp "bad expression: ~s" datum)])))
+      ((or (number? datum) (string? datum) (boolean? datum) (vector? datum) (null? datum)) (lit-exp datum))
+      ((symbol? datum) (var-exp datum))
+      ((not (list? datum)) (eopl:error 'parse-exp 
+        "Error in parse-exp: application is not a proper list: ~s" datum))
+      ((pair? datum)
+        (cond
+          ((eqv? (car datum) 'lambda)
+            (cond
+              ((not (> (length datum) 2)) (eopl:error 'parse-exp 
+                "Error in parse-exp: lambda expression missing body: ~s" datum))
+              ((or (and (not (list? (cadr datum))) (not (symbol? (cadr datum)))) 
+                (and (list? (cadr datum)) (not (andmap symbol? (cadr datum))))) (eopl:error 'parse-exp
+                "Error in parse-exp: lambda argument list: formals must be symbols: ~s" (cadr datum)))
+              (else 
+                (lambda-exp (cadr datum) (map parse-exp (cddr datum))))))
+          ((eqv? (car datum) 'if) 
+            (cond
+              ((= 3 (length datum)) (if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum))))
+              ((= 4 (length datum)) (if-alt-exp (parse-exp (cadr datum)) (parse-exp (caddr datum)) (parse-exp (cadddr datum))))
+              (else (eopl:error 'parse-exp
+                "Error in parse-exp: if expression has incorrect number of arguments: ~s" datum))))
+          ((eqv? (car datum) 'let)
+            (if (not (symbol? (cadr datum))) ; Check for named let
+              (begin (check-let datum) (let-exp (car datum) (parse-exp (cadr datum)) (map parse-exp (cddr datum))))
+              (begin (check-named-let datum)
+                (let-named-exp (car datum) (cadr datum) (parse-exp (caddr datum) (map parse-exp (cdddr datum)))))))
+          ((or (eqv? (car datum) 'let*) (eqv? (car datum) 'letrec))
+            (begin (check-let datum) (let-exp (car datum) (parse-exp (cadr datum)) (map parse-exp (cddr datum)))))
+          ((eqv? (car datum) 'set!) 
+            (begin (check-set! datum) (set!-exp (cadr datum) (parse-exp (caddr datum)))))
+          (else 
+            (app-exp
+            (map parse-exp datum)))))
+      (else (eopl:error 'parse-exp
+              "Invalid concrete syntax ~s" datum)))))
 
+(define unparse-exp
+  (lambda (exp)
+    (cases expression exp
+      (lit-exp (id) id)
+      (var-exp (id) id)
+      (lambda-exp (id body) 
+        (append (list 'lambda id) (map unparse-exp body)))
+      (app-exp (rator)
+        (map unparse-exp rator))
+      (if-exp (test then)
+        (list 'if (unparse-exp test) (unparse-exp rator)))
+      (if-alt-exp (test first second)
+        (list 'if (unparse-exp test) (unparse-exp first) (unparse-exp second)))
+      (let-exp (let-type vars expression)
+        (append (list let-type) (list (unparse-exp vars)) (map unparse-exp expression)))
+      (let-named-exp (let-type let-name vars expression)
+        (append (list let-type let-name) (list (unparse-exp vars)) (map unparse-exp expression)))
+      (quote-exp (data)
+        (list 'quote data))
+      (set!-exp (id new-id)
+        (list 'set! id (unparse-exp new-id))))))
 
+;; Helpers
+;; TODO - refactor the lambda code
+;;      - improve error messages
+(define check-set!
+  (lambda (exp)
+    (if (and (= (length exp) 3) (symbol? (cadr exp)) (parse-exp (caddr exp)))
+      '()
+      (eopl:error 'parse-exp "set! argument/size error: ~s" exp))))
 
+(define check-let
+  (lambda (exp)
+    (if (and (pair? exp) (>= (length exp) 3) (check-let-assignments (cadr exp)))
+      '()
+      (eopl:error 'parse-exp "let argument/size error: ~s" exp))))
 
+(define check-named-let
+  (lambda (exp)
+    (if (and (pair? exp) (symbol? (cadr exp)) (> (length exp) 3) (check-let-assignments (caddr exp)))
+      '()
+      (eopl:error 'parse-exp "named-let argument/size error: ~s" exp))))
 
+(define check-let-assignments
+  (lambda (exp)
+    (if (null? exp) #t
+      (and (proper-list? exp) (proper-list? (car exp)) (= (length (car exp)) 2) (symbol? (caar exp)) (parse-exp (cadar exp))
+        (check-let-assignments (cdr exp))))))
 
-
+(define proper-list?
+  (lambda (ls)
+    (cond ((null? ls) #t)
+      ((pair? ls) (proper-list? (cdr ls)))
+      (else #f))))
 
 
 
