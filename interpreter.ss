@@ -17,10 +17,11 @@
            (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
 		          "variable not found in environment: ~s"
 			   id)))] 
-      [app-exp (rator rands)
-        (let ([proc-value (eval-exp rator)]
-              [args (eval-rands rands)])
-          (apply-proc proc-value args))]
+      ;[app-exp (rator rands)
+      ;  (let ([proc-value (eval-exp rator)]
+      ;        [args (eval-rands rands)])
+      ;    (apply-proc proc-value args))]
+      [app-exp (rator) (eopl:error 'eval-exp "Not ready for app-exp ~s" exp)]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
