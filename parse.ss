@@ -7,45 +7,6 @@
 (define 2nd cadr)
 (define 3rd caddr)
 
-; Datatype for expression
-(define-datatype expression expression?  
-  (lit-exp
-    (id (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
-  (var-exp
-    (id symbol?))
-  (lambda-exp
-    (id (lambda (x) (or (null? x) (symbol? x) (pair? x))))
-    (body listed-expression?))
-  (app-exp
-    (rator (lambda (x) (map expression? x))))
-  (if-exp
-    (test expression?)
-    (then expression?))
-  (if-alt-exp
-    (test expression?)
-    (first expression?)
-    (second expression?))
-  (quote-exp
-    (data (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
-  (set!-exp
-    (id symbol?)
-    (new-id expression?))
-  (let-exp
-    (let-type symbol?)
-    (vars expression?)
-    (expression listed-expression?))
-  (let-named-exp
-    (let-type symbol?)
-    (let-name symbol?)
-    (vars expression?)
-    (expression listed-expression?))
-)
-
-
-(define listed-expression?
-  (lambda (ls)
-    (or (null? ls) (and (pair? ls) (expression? (car ls)) (listed-expression? (cdr ls))))))
-
 (define parse-exp
   (lambda (datum)
     (cond
@@ -81,8 +42,8 @@
             (begin (check-set! datum) (set!-exp (cadr datum) (parse-exp (caddr datum)))))
           ;; TODO - fix quotes defaulting to app expressions
           (else 
-            (app-exp
-            (map parse-exp datum)))))
+            (app-exp (parse-exp (car datum))
+              (map parse-exp (cdr datum))))))
       (else (eopl:error 'parse-exp
               "Invalid concrete syntax ~s" datum)))))
 
@@ -93,8 +54,8 @@
       (var-exp (id) id)
       (lambda-exp (id body) 
         (append (list 'lambda id) (map unparse-exp body)))
-      (app-exp (rator)
-        (map unparse-exp rator))
+      (app-exp (rator rand)
+        (append (list (unparse-exp rator)) (map unparse-exp rator)))
       (if-exp (test then)
         (list 'if (unparse-exp test) (unparse-exp rator)))
       (if-alt-exp (test first second)

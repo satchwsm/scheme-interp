@@ -1,6 +1,44 @@
 
 ;; Parsed expression datatypes
 
+(define-datatype expression expression?  
+  (lit-exp
+    (id (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
+  (var-exp
+    (id symbol?))
+  (lambda-exp
+    (id (lambda (x) (or (null? x) (symbol? x) (pair? x))))
+    (body listed-expression?))
+  (app-exp
+    (rator expression?)
+    (rand listed-expression?))
+  (if-exp
+    (test expression?)
+    (then expression?))
+  (if-alt-exp
+    (test expression?)
+    (first expression?)
+    (second expression?))
+  (quote-exp
+    (data (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
+  (set!-exp
+    (id symbol?)
+    (new-id expression?))
+  (let-exp
+    (let-type symbol?)
+    (vars expression?)
+    (expression listed-expression?))
+  (let-named-exp
+    (let-type symbol?)
+    (let-name symbol?)
+    (vars expression?)
+    (expression listed-expression?))
+)
+
+(define listed-expression?
+  (lambda (ls)
+    (or (null? ls) (and (pair? ls) (expression? (car ls)) (listed-expression? (cdr ls))))))
+
 (define-datatype expression expression?
   [var-exp        ; variable references
    (id symbol?)]
@@ -22,9 +60,6 @@
 (define-datatype proc-val proc-val?
   [prim-proc
    (name symbol?)])
-	 
-	 
-	 
 	
 ;; environment type definitions
 
