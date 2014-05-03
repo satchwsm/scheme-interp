@@ -31,6 +31,13 @@
            (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
 		          "variable not found in environment: ~s"
 			   id)))]
+		[if-exp (test then)
+			(if (eval-exp test)
+				(eval-exp then))]
+		[if-alt-exp (test first second)
+			(if (eval-exp test)
+				(eval-exp first)			
+				(eval-exp second))] 
       [let-exp (let-type vars body)
         (apply begin-eval 
           (map (lambda (x) (eval-exp x (extend-env vars 
