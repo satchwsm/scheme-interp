@@ -3,7 +3,7 @@
 
 (define-datatype expression expression?  
   (lit-exp
-    (id (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
+    (id (lambda (x) #t)))
   (var-exp
     (id symbol?))
   (lambda-exp
@@ -20,7 +20,7 @@
     (first expression?)
     (second expression?))
   (quote-exp
-    (data (lambda (x) (or (number? x) (symbol? x) (string? x) (boolean? x) (vector? x) (null? x)))))
+    (data (lambda (x) #t)))
   (set!-exp
     (id symbol?)
     (new-id expression?))

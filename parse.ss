@@ -23,6 +23,7 @@
                 "Error in parse-exp: lambda argument list: formals must be symbols: ~s" (cadr datum)))
               (else 
                 (lambda-exp (cadr datum) (map parse-exp (cddr datum))))))
+          ((eqv? (car datum) 'quote) (lit-exp (cadr datum)))
           ((eqv? (car datum) 'if) 
             (cond
               ((= 3 (length datum)) (if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum))))
