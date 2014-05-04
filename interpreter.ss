@@ -27,18 +27,18 @@
     (cases expression exp
       [lit-exp (datum) datum]
       [var-exp (id)
-				(apply-env env id; look up its value.
-      	   (lambda (x) x) ; procedure to call if id is in the environment 
+        (apply-env env id; look up its value.
+           (lambda (x) x) ; procedure to call if id is in the environment 
            (lambda () ; procedure to call if id not in env
             (apply-env global-env id identity-proc (lambda ()
               (eopl:error 'apply-env "variable not found in environment: ~s" id)))))]
       [if-exp (test then)
-        (if (eval-exp test)
-          (eval-exp then))]
+        (if (eval-exp test env)
+          (eval-exp then env))]
       [if-alt-exp (test first second)
-        (if (eval-exp test)
-          (eval-exp first)      
-          (eval-exp second))] 		
+        (if (eval-exp test env)
+          (eval-exp first env)      
+          (eval-exp second env))]     
       [let-exp (let-type vars body)
         (apply begin-eval 
           (map (lambda (x) (eval-exp x (extend-env vars 
@@ -84,7 +84,7 @@
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args env)]
       [user-proc (op) (eopl:error 'apply-proc "Not ready for user procedures")]
-			; You will add other cases
+      ; You will add other cases
       [else (error 'apply-proc
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
@@ -107,47 +107,47 @@
       [(<=) (<= (1st args) (2nd args))]
       [(>) (> (1st args) (2nd args))]
       [(>=) (>= (1st args) (2nd args))]
-      [(zero?) (zero? args)]
-      [(not) (not args)]
+      [(zero?) (zero? (1st args))]
+      [(not) (not (1st args))]
       [(cons) (cons (1st args) (2nd args))]
-      [(car) (1st args)]
-      [(cdr) (2nd args)]
-      [(list) (list args)]
-      [(null?) (null? args)]
+      [(car) (1st (1st args))]
+      [(cdr) (cdr (1st args))]
+      [(list) args]
+      [(null?) (null? (1st args))]
       [(assq) (assq (1st args) (2nd args))]
       [(eq?) (eq? (1st args) (2nd args))]
       [(equal?) (equal? (1st args) (2nd args))]
-      [(atom?) (atom? args)]
-      [(length) (length args)]
+      [(atom?) (atom? (1st args))]
+      [(length) (length (1st args))]
       [(list->vector) (list->vector args)]
       [(list?) (list? args)]
       [(pair?) (pair? args)]
       [(procedure?) (procedure? args)]
       [(vector->list) (vector->list args)]
-      [(vector) (vector args)]
+      [(vector) (apply vector args)]
       [(make-vector) (make-vector (1st args) (2nd args))]
       [(make-list) (make-list (1st args) (2nd args))]
       [(vector-ref) (vector-ref (1st args) (2nd args))]
       [(list-ref) (list-ref (1st args) (2nd args))]
-      [(vector?) (vector? args)]
-      [(number?) (number? args)]
-      [(symbol?) (symbol? args)]
+      [(vector?) (vector? (1st args))]
+      [(number?) (number? (1st args))]
+      [(symbol?) (symbol? (1st args))]
       [(set!-car) (set!-car (1st args) (2nd args))]
       [(set!-cdr) (set!-cdr (1st args) (2nd args))]
       [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
-      [(display) (display args)]
-      [(newline) (newline args)]
-      [(caar) (caar args)]
-      [(cadr) (cadr args)]
-      [(cdar) (cdar args)]
-      [(caaar) (caaar args)]
-      [(caadr) (caadr args)]
-      [(cadar) (cadar args)]
-      [(cdaar) (cdaar args)]
-      [(caddr) (caddr args)]
-      [(cdadr) (cdadr args)]
-      [(cddar) (cddar args)]
-      [(cdddr) (cdddr args)]
+      [(display) (display (1st args))]
+      [(newline) (newline (1st args))]
+      [(caar) (caar (1st args))]
+      [(cadr) (cadr (1st args))]
+      [(cdar) (cdar (1st args))]
+      [(caaar) (caaar (1st args))]
+      [(caadr) (caadr (1st args))]
+      [(cadar) (cadar (1st args))]
+      [(cdaar) (cdaar (1st args))]
+      [(caddr) (caddr (1st args))]
+      [(cdadr) (cdadr (1st args))]
+      [(cddar) (cddar (1st args))]
+      [(cdddr) (cdddr (1st args))]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))
