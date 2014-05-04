@@ -10,8 +10,14 @@
     (load "datatypes.ss")
     (load "parse.ss")
     (load "env.ss")
-    (load "interpreter.ss")))
+    (load "interpreter.ss")
 
+	; odd fix
+	(load "datatypes.ss")
+    (load "parse.ss")
+    (load "env.ss")
+    (load "interpreter.ss")))
+	
 (load-all)
 
 (define l load-all) ; even easier!

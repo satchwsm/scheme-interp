@@ -39,7 +39,7 @@
         (if (eval-exp test env)
           (eval-exp first env)      
           (eval-exp second env))]     
-      [let-exp (let-type vars body)
+      [let-exp (vars values body)
         (apply begin-eval 
           (map (lambda (x) (eval-exp x (extend-env vars 
             (map (lambda (x) (eval-exp x env)) values) env)))
@@ -48,6 +48,8 @@
         (let ([proc-value (eval-exp rator env)]
               [args (eval-rands rands env)])
           (apply-proc proc-value args env))]
+      [lambda-exp (id body)
+        (user-proc id body env)]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -83,11 +85,21 @@
   (lambda (proc-value args env)
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args env)]
-      [user-proc (op) (eopl:error 'apply-proc "Not ready for user procedures")]
-      ; You will add other cases
-      [else (error 'apply-proc
-                   "Attempt to apply bad procedure: ~s" 
-                    proc-value)])))
+      [user-proc (vars body env) 
+        (cond
+          ([symbol? vars] 
+            (let ([new-env (extend-env (list vars) (list args) env)])
+              (apply begin-eval (eval-rands body new-env))))
+        ;([not (proper-list? vars)]
+        ;  (let ([proper-list-vars (improper-lambda-vars vars)])
+        ;    (let ([new-env (extend-env proper-list-vars (improper-lambda-args (length proper-list-vars) args) env)])
+        ;      (apply begin-eval (eval-rands body new-env)))))
+        (else
+          (if (not (= (length args) (length vars)))
+            (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
+            (let ([new-env (extend-env vars args env)])
+              (apply begin-eval (eval-rands body new-env))))))]
+      [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
 
 ; Usually an interpreter must define each 
 ; built-in procedure individually.  We are "cheating" a little bit.
@@ -96,10 +108,10 @@
   (lambda (prim-proc args env)
     ;(display (list prim-proc args))
     (case prim-proc
-      [(+) (low-prim-proc + args 0)]
-      [(-) (low-prim-proc - args 0)]
-      [(*) (low-prim-proc * args 1)]
-      [(/) (low-prim-proc / args 1)]
+      [(+) (apply + args)]
+      [(-) (apply - args)]
+      [(*) (apply * args)]
+      [(/) (apply / args)]
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
       [(=) (= (1st args) (2nd args))]
@@ -119,11 +131,11 @@
       [(equal?) (equal? (1st args) (2nd args))]
       [(atom?) (atom? (1st args))]
       [(length) (length (1st args))]
-      [(list->vector) (list->vector args)]
-      [(list?) (list? args)]
-      [(pair?) (pair? args)]
-      [(procedure?) (procedure? args)]
-      [(vector->list) (vector->list args)]
+      [(list->vector) (list->vector (1st args))]
+      [(list?) (list? (1st args))]
+      [(pair?) (pair? (1st args))]
+      [(procedure?) (proc-val? (1st args))]
+      [(vector->list) (vector->list (1st args))]
       [(vector) (apply vector args)]
       [(make-vector) (make-vector (1st args) (2nd args))]
       [(make-list) (make-list (1st args) (2nd args))]
@@ -132,8 +144,8 @@
       [(vector?) (vector? (1st args))]
       [(number?) (number? (1st args))]
       [(symbol?) (symbol? (1st args))]
-      [(set!-car) (set!-car (1st args) (2nd args))]
-      [(set!-cdr) (set!-cdr (1st args) (2nd args))]
+      [(set-car!) (set-car! (1st args) (2nd args))]
+      [(set-cdr!) (set-cdr! (1st args) (2nd args))]
       [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
       [(display) (display (1st args))]
       [(newline) (newline (1st args))]
@@ -153,12 +165,6 @@
             prim-op)])))
 
 ;; Helper functions
-
-(define low-prim-proc
-  (lambda (prim-proc args base-case)
-    (if (null? args)
-      base-case
-      (prim-proc (1st args) (low-prim-proc prim-proc (cdr args) base-case)))))
 
 (define identity-proc (lambda (x) x))
 (define void-proc (void))

@@ -54,7 +54,9 @@
   [prim-proc
    (name symbol?)]
   [user-proc
-   (name symbol?)])
+   (vars (lambda (x) (or (list? x) (pair? x) (symbol? x))))
+   (body listed-expression?)
+   (env environment?)])
 	
 ;; environment type definitions
 
