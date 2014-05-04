@@ -43,12 +43,12 @@
                (let-exp (map car (cadr datum))
                   (map parse-exp (map cadr (cadr datum)))
                   (map parse-exp (cddr datum))))))
-          ([eqv? first 'let*]
+          ([eqv? (car datum) 'let*]
            (proper-let-syntax? datum cadr 3)
            (let*-exp (map car (cadr datum))
                (map parse-exp (map cadr (cadr datum)))
                (map parse-exp (cddr datum))))
-          ([eqv? first 'letrec]
+          ([eqv? (car datum) 'letrec]
            (proper-let-syntax? datum cadr 3)
            (letrec-exp (map car (cadr datum))
                  (map parse-exp (map cadr (cadr datum))) 

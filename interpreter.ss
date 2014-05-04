@@ -17,36 +17,37 @@
 (define top-level-eval
   (lambda (form)
     ; later we may add things that are not expressions.
-    (eval-exp form)))
+    (eval-exp form (empty-env-record))))
 
 ; eval-exp is the main component of the interpreter
 
 (define eval-exp
-  (lambda (exp)
+  (lambda (exp env)
+    ;(display exp)
     (cases expression exp
       [lit-exp (datum) datum]
       [var-exp (id)
-				(apply-env init-env id; look up its value.
+				(apply-env env id; look up its value.
       	   (lambda (x) x) ; procedure to call if id is in the environment 
-           (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
-		          "variable not found in environment: ~s"
-			   id)))]
-      [let-exp (let-type vars body)
+           (lambda () ; procedure to call if id not in env
+            (apply-env global-env id identity-proc (lambda ()
+              (eopl:error 'apply-env "variable not found in environment: ~s" id)))))]
+      [let-exp (vars values body)
         (apply begin-eval 
           (map (lambda (x) (eval-exp x (extend-env vars 
             (map (lambda (x) (eval-exp x env)) values) env)))
           body))] 
       [app-exp (rator rands)
-        (let ([proc-value (eval-exp rator)]
-              [args (eval-rands rands)])
-          (apply-proc proc-value args))]
+        (let ([proc-value (eval-exp rator env)]
+              [args (eval-rands rands env)])
+          (apply-proc proc-value args env))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
 
 (define eval-rands
-  (lambda (rands)
-    (map eval-exp rands)))
+  (lambda (rands env)
+    (map (lambda (x) (eval-exp x env)) rands)))
 
 (define begin-eval
   (case-lambda
@@ -72,9 +73,10 @@
 ;  User-defined procedures will be added later.
 
 (define apply-proc
-  (lambda (proc-value args)
+  (lambda (proc-value args env)
     (cases proc-val proc-value
-      [prim-proc (op) (apply-prim-proc op args)]
+      [prim-proc (op) (apply-prim-proc op args env)]
+      [user-proc (op) (eopl:error 'apply-proc "Not ready for user procedures")]
 			; You will add other cases
       [else (error 'apply-proc
                    "Attempt to apply bad procedure: ~s" 
@@ -84,7 +86,7 @@
 ; built-in procedure individually.  We are "cheating" a little bit.
 
 (define apply-prim-proc
-  (lambda (prim-proc args)
+  (lambda (prim-proc args env)
     ;(display (list prim-proc args))
     (case prim-proc
       [(+) (low-prim-proc + args 0)]
@@ -153,6 +155,7 @@
 
 (define identity-proc (lambda (x) x))
 (define void-proc (void))
+(define global-env init-env)
 
 
 
