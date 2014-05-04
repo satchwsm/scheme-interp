@@ -33,12 +33,12 @@
             (apply-env global-env id identity-proc (lambda ()
               (eopl:error 'apply-env "variable not found in environment: ~s" id)))))]
       [if-exp (test then)
-        (if (eval-exp test)
-          (eval-exp then))]
+        (if (eval-exp test env)
+          (eval-exp then env))]
       [if-alt-exp (test first second)
-        (if (eval-exp test)
-          (eval-exp first)      
-          (eval-exp second))] 		
+        (if (eval-exp test env)
+          (eval-exp first env)      
+          (eval-exp second env))] 		
       [let-exp (let-type vars body)
         (apply begin-eval 
           (map (lambda (x) (eval-exp x (extend-env vars 
