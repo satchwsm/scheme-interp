@@ -169,18 +169,16 @@
 							(let ([f (lambda (a) (+ a b))]) 
 									(f (+ 3 a b))))) 
 	       56 17))
-	     (eval-one-exp ' 
-	      (((lambda (f) 
-						((lambda (x) 
-							f (lambda (y) 
-									((x x) y)))) 
-						(lambda (x) 
-							(f (lambda (y) 
-									((x x) y)))))) 
-				(lambda (g) 
-					(lambda (n) 
-							(if (zero? n) 1 (* n (g (- n 1))))))) 
-	       6)
+	     (eval-one-exp '
+(((lambda (f)
+   ((lambda (x) (f (lambda (y) ((x x) y))))
+    (lambda (x) (f (lambda (y) ((x x) y))))))
+  (lambda (g)
+    (lambda (n)
+      (if (zero? n)
+          1
+          (* n (g (- n 1)))))))
+   6))
 	     (eval-one-exp ' 
 	      (let ([Y (lambda (f) 
 			 ((lambda (x) 
