@@ -143,8 +143,7 @@
         (or-exp (conds)
           (if (null? conds)
              (lit-exp #f)
-             (syntax-expand (
-              (car conds) (car conds) (syntax-expand (or-exp (cdr conds)))))))
+             (if-alt-exp (car conds) (car conds) (syntax-expand (or-exp (cdr conds))))))
         (cond-exp (cases exps)
           (if (null? (cdr cases))
             (if (eqv? (cadar cases) 'else)
