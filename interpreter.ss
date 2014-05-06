@@ -4,15 +4,18 @@
   (lambda ()
     (display "--> ")
     ;; notice that we don't save changes to the environment...
-    (let ([answer (top-level-eval (parse-exp (read)))])
-      ;; TODO: are there answers that should display differently?
-      (eopl:pretty-print answer) (newline)
-      (rep))))  ; tail-recursive, so stack doesn't grow.
+    (let ([read (read)])
+      (if (eqv? 'exit read)
+        (void)
+        (let ([answer (top-level-eval (parse-exp (read)))])
+          ;; TODO: are there answers that should display differently?
+          (eopl:pretty-print answer) (newline)
+          (rep))))))  ; tail-recursive, so stack doesn't grow.
 
 (define eval-one-exp
   (lambda (x)
     ;(display (parse-exp x)) 
-    (top-level-eval (parse-exp x))))
+    (top-level-eval (syntax-expand (parse-exp x)))))
 
 (define top-level-eval
   (lambda (form)
@@ -34,7 +37,8 @@
               (eopl:error 'apply-env "variable not found in environment: ~s" id)))))]
       [if-exp (test then)
         (if (eval-exp test env)
-          (eval-exp then env))]
+          (eval-exp then env)
+          (void))]
       [if-alt-exp (test first second)
         (if (eval-exp test env)
           (eval-exp first env)      
@@ -53,22 +57,16 @@
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
-
 (define eval-rands
   (lambda (rands env)
     (map (lambda (x) (eval-exp x env)) rands)))
 
-(define begin-eval
-  (case-lambda
-   [(x) x]
-   [(x . rest)
-      (apply begin-eval rest)]))
-
 (define *prim-proc-names* 
   '(+ - * / add1 sub1 = < <= > >= zero? not cons car cdr list null? assq eq? equal?
   atom? length list->vector list? pair? procedure? vector->list vector make-vector
-  make-list vector->ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
-  display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr))
+  make-list vector-ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
+  display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr
+  void map apply))
 
 (define init-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -83,6 +81,7 @@
 
 (define apply-proc
   (lambda (proc-value args env)
+    ;(display (list proc-value args))
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args env)]
       [user-proc (vars body env) 
@@ -90,15 +89,15 @@
           ([symbol? vars] 
             (let ([new-env (extend-env (list vars) (list args) env)])
               (apply begin-eval (eval-rands body new-env))))
-        ;([not (proper-list? vars)]
-        ;  (let ([proper-list-vars (improper-lambda-vars vars)])
-        ;    (let ([new-env (extend-env proper-list-vars (improper-lambda-args (length proper-list-vars) args) env)])
-        ;      (apply begin-eval (eval-rands body new-env)))))
-        (else
-          (if (not (= (length args) (length vars)))
-            (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
-            (let ([new-env (extend-env vars args env)])
-              (apply begin-eval (eval-rands body new-env))))))]
+          ([not (proper-list? vars)]
+            (let ([proper-list-vars (improper-lambda-vars vars)])
+              (let ([new-env (extend-env proper-list-vars (improper-lambda-args (length proper-list-vars) args) env)])
+                (apply begin-eval (eval-rands body new-env)))))
+          (else
+            (if (not (= (length args) (length vars)))
+              (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
+              (let ([new-env (extend-env vars args env)])
+                (apply begin-eval (eval-rands body new-env))))))]
       [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
 
 ; Usually an interpreter must define each 
@@ -160,11 +159,39 @@
       [(cdadr) (cdadr (1st args))]
       [(cddar) (cddar (1st args))]
       [(cdddr) (cdddr (1st args))]
+      [(void) (void)]
+      [(map) (map (lambda (x) (apply-proc (car args) (list x) env)) (cadr args))]
+      [(apply) (apply-proc (car args) (flatten (cdr args)) env)]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))
 
 ;; Helper functions
+
+(define begin-eval
+  (case-lambda
+   [(x) x]
+   [(x . rest)
+      (apply begin-eval rest)]))
+
+(define improper-lambda-vars
+  (lambda (vars)
+    (cond
+     ([symbol? vars] (list vars))
+     (else (cons (car vars) (improper-lambda-vars (cdr vars)))))))
+
+(define improper-lambda-args
+  (lambda (length args)
+    (if (= length 1)
+  (list args)
+  (cons (car args) (improper-lambda-args (- length 1) (cdr args))))))
+
+(define flatten
+ (lambda (list)
+   (cond
+    ([null? list] '())
+    ([list? (car list)] (append (car list) (flatten (cdr list))))
+    (else (cons (car list) (flatten (cdr list)))))))
 
 (define identity-proc (lambda (x) x))
 (define void-proc (void))

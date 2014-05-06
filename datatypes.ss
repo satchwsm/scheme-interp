@@ -37,27 +37,28 @@
     (values list?)
     (body listed-expression))
   (let-named-exp
-    (let-type symbol?)
     (let-name symbol?)
     (vars expression?)
+    (values expression?)
     (expression listed-expression?))
+  (begin-exp
+    (body listed-expression?))
+  (and-exp
+    (conds listed-expression?))
+  (or-exp
+    (conds listed-expression?))
+  (cond-exp
+    (cases listed-expression?)
+    (exps listed-expression?))
+  (case-exp
+    (cases listed-expression?)
+    (else expression?))
 )
 
 (define listed-expression?
   (lambda (ls)
     (or (null? ls) (and (pair? ls) (expression? (car ls)) (listed-expression? (cdr ls))))))
-	
-; datatype for procedures.  At first there is only one
-; kind of procedure, but more kinds will be added later.
 
-(define-datatype proc-val proc-val?
-  [prim-proc
-   (name symbol?)]
-  [user-proc
-   (vars (lambda (x) (or (list? x) (pair? x) (symbol? x))))
-   (body listed-expression?)
-   (env environment?)])
-	
 ;; environment type definitions
 
 (define scheme-value?
@@ -69,3 +70,15 @@
    (syms (list-of symbol?))
    (vals (list-of scheme-value?))
    (env environment?)))
+   	
+; datatype for procedures.  At first there is only one
+; kind of procedure, but more kinds will be added later.
+
+(define-datatype proc-val proc-val?
+  [prim-proc
+   (name symbol?)]
+  [user-proc
+   (vars (lambda (x) (or (list? x) (pair? x) (symbol? x))))
+   (body listed-expression?)
+   (env environment?)])
+	
