@@ -53,6 +53,9 @@
   (case-exp
     (cases listed-expression?)
     (else expression?))
+  (while-exp
+    (test expression?)
+    (cases expression?))
 )
 
 (define listed-expression?

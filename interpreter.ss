@@ -54,6 +54,10 @@
           (apply-proc proc-value args env))]
       [lambda-exp (id body)
         (user-proc id body env)]
+      [while-exp (test cases)
+        (let ([res (eval-exp test env)])
+          (if (not res)
+            (begin (eval-exp cases env) (eval-exp exp env))))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -66,7 +70,7 @@
   atom? length list->vector list? pair? procedure? vector->list vector make-vector
   make-list vector-ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
   display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr
-  void map apply))
+  void map apply quotient))
 
 (define init-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -111,6 +115,7 @@
       [(-) (apply - args)]
       [(*) (apply * args)]
       [(/) (apply / args)]
+      [(quotient) (apply quotient args)]
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
       [(=) (= (1st args) (2nd args))]

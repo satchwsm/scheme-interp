@@ -10,19 +10,24 @@
     (cond
       ((or (number? datum) (string? datum) (boolean? datum) (vector? datum) (null? datum)) (lit-exp datum))
       ((symbol? datum) (var-exp datum))
-      ((not (list? datum)) (eopl:error 'parse-exp 
-        "Error in parse-exp: application is not a proper list: ~s" datum))
+      ((not (list? datum)) 
+        ;(eopl:error 'parse-exp "Error in parse-exp: application is not a proper list: ~s" datum))
+        (lit-exp datum))
       ((pair? datum)
         (cond
           ((eqv? (car datum) 'lambda)
             (cond
               ((not (> (length datum) 2)) (eopl:error 'parse-exp 
                 "Error in parse-exp: lambda expression missing body: ~s" datum))
-              ((or (and (not (list? (cadr datum))) (not (symbol? (cadr datum)))) 
+              ((or (and (not (list? (cadr datum))) (proper-list? (cadr datum)) (not (symbol? (cadr datum)))) 
                 (and (list? (cadr datum)) (not (andmap symbol? (cadr datum))))) (eopl:error 'parse-exp
                 "Error in parse-exp: lambda argument list: formals must be symbols: ~s" (cadr datum)))
-              (else 
+              ((contains-duplicates? (cadr datum)) 
+                (eopl:error 'parse-exp "Error in parse-exp: lambda variables can not be repeated ~s" datum))
+              (else
                 (lambda-exp (cadr datum) (map parse-exp (cddr datum))))))
+                ;(begin (display (cadr datum)) 
+                ;  (lambda-exp (cadr datum) (map parse-exp (cddr datum)))))))
           ((eqv? (car datum) 'quote) (lit-exp (cadr datum)))
           ((eqv? (car datum) 'if) 
             (cond
@@ -67,6 +72,8 @@
               (map parse-exp (map cadr (cdr datum)))))
           ([eqv? (car datum) 'case]
             (case-exp (map parse-exp (cdr datum)) (lit-exp 'todo)))
+          ([eqv? (car datum) 'while]
+            (while-exp (parse-exp (cadr datum)) (parse-exp (cddr datum))))
           (else 
             (app-exp (parse-exp (car datum))
               (map parse-exp (cdr datum))))))
@@ -153,6 +160,8 @@
                 (syntax-expand (car exps)) 
                 (syntax-expand (cond-exp (cdr cases) (cdr exps))))))
         (case-exp (cases else) 'todo)
+        (while-exp (test cases)
+          (while-exp (syntax-expand test) (syntax-expand cases)))
       )))
 
 (define contains-duplicates?
