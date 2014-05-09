@@ -127,7 +127,8 @@
 	     (eval-one-exp '(cond [(> 4 3) 8] [(< 2 3) 7] [else 6]))
 	     (eval-one-exp '(cond [else 8]))
 	     (eval-one-exp '(let ([a (vector 3)]) 
-			      (cond [(= (vector-ref a 0) 4) 5] 
+			      (cond 
+			      	[(= (vector-ref a 0) 4) 5] 
 				    [(begin (vector-set! a 0 
 					      (+ 1 (vector-ref a 0))) 
 					    (= (vector-ref a 0) 4)) 6] 

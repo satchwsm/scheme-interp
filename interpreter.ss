@@ -65,6 +65,14 @@
   (lambda (rands env)
     (map (lambda (x) (eval-exp x env)) rands)))
 
+; evaluates the body of a lambda exp in order and returns result in a list
+(define eval-body
+  (lambda (body env)
+    (let loop ([body body][env env][res '()])
+      (if (null? body)
+        res
+        (loop (cdr body) env (append (list (eval-exp (car body) env)) res))))))
+
 (define *prim-proc-names* 
   '(+ - * / add1 sub1 = < <= > >= zero? not cons car cdr list null? assq eq? equal?
   atom? length list->vector list? pair? procedure? vector->list vector make-vector
@@ -90,7 +98,7 @@
       [prim-proc (op) (apply-prim-proc op args env)]
       [user-proc (vars body env) 
         (cond
-          ([symbol? vars] 
+          ([symbol? vars]
             (let ([new-env (extend-env (list vars) (list args) env)])
               (apply begin-eval (eval-rands body new-env))))
           ([not (proper-list? vars)]
@@ -101,7 +109,9 @@
             (if (not (= (length args) (length vars)))
               (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
               (let ([new-env (extend-env vars args env)])
-                (apply begin-eval (eval-rands body new-env))))))]
+                ;(apply begin-eval (eval-rands body new-env))))))]
+              ;(apply begin-eval (eval-body body new-env))))))]
+              (car (eval-body body new-env))))))]
       [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
 
 ; Usually an interpreter must define each 
@@ -135,22 +145,22 @@
       [(equal?) (equal? (1st args) (2nd args))]
       [(atom?) (atom? (1st args))]
       [(length) (length (1st args))]
-      [(list->vector) (list->vector (1st args))]
+      [(number?) (number? (1st args))]
+      [(symbol?) (symbol? (1st args))]
       [(list?) (list? (1st args))]
       [(pair?) (pair? (1st args))]
       [(procedure?) (proc-val? (1st args))]
+      [(list->vector) (list->vector (1st args))]
       [(vector->list) (vector->list (1st args))]
       [(vector) (apply vector args)]
+      [(vector?) (vector? (1st args))]
       [(make-vector) (make-vector (1st args) (2nd args))]
       [(make-list) (make-list (1st args) (2nd args))]
       [(vector-ref) (vector-ref (1st args) (2nd args))]
       [(list-ref) (list-ref (1st args) (2nd args))]
-      [(vector?) (vector? (1st args))]
-      [(number?) (number? (1st args))]
-      [(symbol?) (symbol? (1st args))]
+      [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
       [(set-car!) (set-car! (1st args) (2nd args))]
       [(set-cdr!) (set-cdr! (1st args) (2nd args))]
-      [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
       [(display) (display (1st args))]
       [(newline) (newline (1st args))]
       [(caar) (caar (1st args))]
