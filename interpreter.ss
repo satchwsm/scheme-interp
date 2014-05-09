@@ -26,7 +26,6 @@
 
 (define eval-exp
   (lambda (exp env)
-    ;(display exp)
     (cases expression exp
       [lit-exp (datum) datum]
       [var-exp (id)
@@ -55,9 +54,9 @@
       [lambda-exp (id body)
         (user-proc id body env)]
       [while-exp (test cases)
-        (let ([res (eval-exp test env)])
-          (if (not res)
-            (begin (eval-exp cases env) (eval-exp exp env))))]
+        (if (not (eval-exp test env))
+          (void)
+          (begin (eval-body cases env) (eval-exp exp env)))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -78,7 +77,7 @@
   atom? length list->vector list? pair? procedure? vector->list vector make-vector
   make-list vector-ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
   display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr
-  void map apply quotient))
+  void map apply quotient memq))
 
 (define init-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -109,9 +108,7 @@
             (if (not (= (length args) (length vars)))
               (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
               (let ([new-env (extend-env vars args env)])
-                ;(apply begin-eval (eval-rands body new-env))))))]
-              ;(apply begin-eval (eval-body body new-env))))))]
-              (car (eval-body body new-env))))))]
+                (car (eval-body body new-env))))))]
       [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
 
 ; Usually an interpreter must define each 
@@ -175,6 +172,7 @@
       [(cddar) (cddar (1st args))]
       [(cdddr) (cdddr (1st args))]
       [(void) (void)]
+      [(memq) (memq (1st args) (2nd args))]
       [(map) (map (lambda (x) (apply-proc (car args) (list x) env)) (cadr args))]
       [(apply) (apply-proc (car args) (flatten (cdr args)) env)]
       [else (error 'apply-prim-proc 

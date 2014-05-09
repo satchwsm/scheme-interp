@@ -51,11 +51,12 @@
     (cases listed-expression?)
     (exps listed-expression?))
   (case-exp
+    (test expression?)
     (cases listed-expression?)
-    (else expression?))
+    (vals listed-expression?))
   (while-exp
     (test expression?)
-    (cases expression?))
+    (cases listed-expression?))
 )
 
 (define listed-expression?

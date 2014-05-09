@@ -10,8 +10,7 @@
     (cond
       ((or (number? datum) (string? datum) (boolean? datum) (vector? datum) (null? datum)) (lit-exp datum))
       ((symbol? datum) (var-exp datum))
-      ((not (list? datum)) 
-        ;(eopl:error 'parse-exp "Error in parse-exp: application is not a proper list: ~s" datum))
+      ((not (list? datum))
         (lit-exp datum))
       ((pair? datum)
         (cond
@@ -28,7 +27,7 @@
                 (lambda-exp (cadr datum) (map parse-exp (cddr datum))))))
                 ;(begin (display (cadr datum)) 
                 ;  (lambda-exp (cadr datum) (map parse-exp (cddr datum)))))))
-          ((eqv? (car datum) 'quote) (lit-exp (cadr datum)))
+          ((or (eqv? (car datum) 'quote) (eqv? (car datum) #\')) (lit-exp (cadr datum)))
           ((eqv? (car datum) 'if) 
             (cond
               ((= 3 (length datum)) (if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum))))
@@ -71,9 +70,10 @@
             (cond-exp (map parse-exp (map car (cdr datum)))
               (map parse-exp (map cadr (cdr datum)))))
           ([eqv? (car datum) 'case]
-            (case-exp (map parse-exp (cdr datum)) (lit-exp 'todo)))
+            (case-exp (parse-exp (cadr datum)) (map lit-exp (map car (cddr datum)))
+              (map parse-exp (map cadr (cddr datum)))))
           ([eqv? (car datum) 'while]
-            (while-exp (parse-exp (cadr datum)) (parse-exp (cddr datum))))
+            (while-exp (parse-exp (cadr datum)) (map parse-exp (cddr datum))))
           (else 
             (app-exp (parse-exp (car datum))
               (map parse-exp (cdr datum))))))
@@ -114,7 +114,6 @@
 
 (define syntax-expand
   (lambda (exp)
-    ;(display exp)
     (cases expression exp
         (lit-exp (id) exp)
         (var-exp (id) exp)
@@ -159,9 +158,14 @@
             (if-alt-exp (syntax-expand (car cases)) 
                 (syntax-expand (car exps)) 
                 (syntax-expand (cond-exp (cdr cases) (cdr exps))))))
-        (case-exp (cases else) 'todo)
+        (case-exp (test cases values) 
+          (syntax-expand (cond-exp (map 
+            (lambda (x)
+              (if (not (equal? 'else (cadr x)) )
+                (app-exp (var-exp 'memq) (list test x))
+                (lit-exp #t))) cases) values)))
         (while-exp (test cases)
-          (while-exp (syntax-expand test) (syntax-expand cases)))
+          (while-exp (syntax-expand test) (map syntax-expand cases)))
       )))
 
 (define contains-duplicates?
