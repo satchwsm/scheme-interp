@@ -35,7 +35,7 @@
   (letrec-exp
     (vars list?)
     (values list?)
-    (body listed-expression))
+    (body listed-expression?))
   (let-named-exp
     (let-name symbol?)
     (vars expression?)
@@ -57,6 +57,9 @@
   (while-exp
     (test expression?)
     (cases listed-expression?))
+  (varassign-exp
+    (id symbol?)
+    (exp expression?))
 )
 
 (define listed-expression?
@@ -68,13 +71,20 @@
 (define scheme-value?
   (lambda (x) #t))
 
+;(define-datatype environment environment?
+;  (empty-env-record)
+;  (extended-env-record
+;   (syms (list-of symbol?))
+;   (vals (list-of scheme-value?))
+;   (env environment?)))
+   	
 (define-datatype environment environment?
   (empty-env-record)
   (extended-env-record
-   (syms (list-of symbol?))
-   (vals (list-of scheme-value?))
-   (env environment?)))
-   	
+    (syms (list-of symbol?))
+    (cells (list-of box?))
+    (env environment?)))
+
 ; datatype for procedures.  At first there is only one
 ; kind of procedure, but more kinds will be added later.
 

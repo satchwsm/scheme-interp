@@ -1,12 +1,12 @@
 ; Environment definitions for CSSE 304 Scheme interpreter.  Based on EoPL section 2.3
 
-(define empty-env
-  (lambda ()
-    (empty-env-record)))
+;(define empty-env
+;  (lambda ()
+;    (empty-env-record)))
 
-(define extend-env
-  (lambda (syms vals env)
-    (extended-env-record syms vals env)))
+;(define extend-env
+;  (lambda (syms vals env)
+;    (extended-env-record syms vals env)))
 
 (define list-find-position
   (lambda (sym los)
@@ -22,17 +22,48 @@
 		 (+ 1 list-index-r)
 		 #f))))))
 
-(define apply-env
-  (lambda (env sym succeed fail) ; succeed and fail are procedures applied if the var is or isn't found, respectively.
-    (cases environment env
-      (empty-env-record ()
-        (fail))
-      (extended-env-record (syms vals e)
-        ;(display syms)
-	      (let ((pos (list-find-position sym syms)))
-          ;(display pos)
-          (if (number? pos)
-	         ;(begin (display (list-ref vals pos)) (succeed (list-ref vals pos)))
-           (succeed (list-ref vals pos))
-	         (apply-env e sym succeed fail)))))))
+;(define apply-env
+;  (lambda (env sym succeed fail) ; succeed and fail are procedures applied if the var is or isn't found, respectively.
+;    (cases environment env
+;      (empty-env-record ()
+;        (fail))
+;      (extended-env-record (syms vals e)
+;        ;(display syms)
+;	      (let ((pos (list-find-position sym syms)))
+;          ;(display pos)
+;          (if (number? pos)
+;	         ;(begin (display (list-ref vals pos)) (succeed (list-ref vals pos)))
+;           (succeed (list-ref vals pos))
+;	         (apply-env e sym succeed fail)))))))
 
+(define apply-env
+  (lambda (env sym succeed fail)
+    (let ((ref (apply-env-ref env sym fail)))
+      ;(display ref)
+      (deref ref))))
+
+(define empty-env
+  (lambda ()
+    (empty-env-record)))
+
+(define extend-env
+  (lambda (syms cells env)
+    (extended-env-record syms cells env)))
+
+(define deref
+  (lambda (ref)
+    (unbox ref)))
+
+(define set-ref!
+  (lambda (ref value)
+    (set-box! ref value)))
+
+(define apply-env-ref
+  (lambda (env sym fail)
+    (cases environment env
+      (empty-env-record () (fail))
+      (extended-env-record (syms cells e)
+        (let ((pos (list-find-position sym syms)))
+          (if (number? pos)
+            (list-ref cells pos)
+            (apply-env-ref e sym fail)))))))

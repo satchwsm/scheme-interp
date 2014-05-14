@@ -32,8 +32,8 @@
         (apply-env env id; look up its value.
            (lambda (x) x) ; procedure to call if id is in the environment 
            (lambda () ; procedure to call if id not in env
-            (apply-env global-env id identity-proc (lambda ()
-              (eopl:error 'apply-env "variable not found in environment: ~s" id)))))]
+            (apply-env-ref global-env id (lambda ()
+              (eopl:error 'apply-env-ref "variable not found in environment: ~s" id)))))]
       [if-exp (test then)
         (if (eval-exp test env)
           (eval-exp then env)
@@ -42,10 +42,10 @@
         (if (eval-exp test env)
           (eval-exp first env)      
           (eval-exp second env))]     
-      [let-exp (vars values body)
+      [let-exp (vars values body) ; this is never used because lets are expanded into lambdas
         (apply begin-eval 
           (map (lambda (x) (eval-exp x (extend-env vars 
-            (map (lambda (x) (eval-exp x env)) values) env)))
+            (map box (map (lambda (x) (eval-exp x env)) values)) env)))
           body))] 
       [app-exp (rator rands)
         (let ([proc-value (eval-exp rator env)]
@@ -57,6 +57,8 @@
         (if (not (eval-exp test env))
           (void)
           (begin (eval-body cases env) (eval-exp exp env)))]
+      [varassign-exp (id e)
+        (set-ref! (apply-env-ref env id (lambda () (eopl: error 'apply-env-ref "variable not found: ~s" id))) (eval-exp e env))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -79,12 +81,18 @@
   display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr
   void map apply quotient memq))
 
-(define init-env         ; for now, our initial global environment only contains 
-  (extend-env            ; procedure names.  Recall that an environment associates
-     *prim-proc-names*   ;  a value (not an expression) with an identifier.
-     (map prim-proc      
-          *prim-proc-names*)
-     (empty-env)))
+;(define init-env         ; for now, our initial global environment only contains 
+;  (extend-env            ; procedure names.  Recall that an environment associates
+;     *prim-proc-names*   ;  a value (not an expression) with an identifier.
+;     (map prim-proc      
+;          *prim-proc-names*)
+;     (empty-env)))
+
+(define init-env
+  (extend-env
+    *prim-proc-names*
+    (map box (map prim-proc *prim-proc-names*))
+    (empty-env)))
 
 ;  Apply a procedure to its arguments.
 ;  At this point, we only have primitive procedures.  
@@ -98,16 +106,17 @@
       [user-proc (vars body env) 
         (cond
           ([symbol? vars]
-            (let ([new-env (extend-env (list vars) (list args) env)])
+            (let ([new-env (extend-env (list vars) (map box (list args)) env)])
               (apply begin-eval (eval-rands body new-env))))
           ([not (proper-list? vars)]
             (let ([proper-list-vars (improper-lambda-vars vars)])
-              (let ([new-env (extend-env proper-list-vars (improper-lambda-args (length proper-list-vars) args) env)])
+              (let ([new-env (extend-env proper-list-vars 
+                  (map box (improper-lambda-args (length proper-list-vars) args)) env)])
                 (apply begin-eval (eval-rands body new-env)))))
           (else
             (if (not (= (length args) (length vars)))
               (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
-              (let ([new-env (extend-env vars args env)])
+              (let ([new-env (extend-env vars (map box args) env)])
                 (car (eval-body body new-env))))))]
       [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
 

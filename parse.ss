@@ -74,6 +74,8 @@
               (map parse-exp (map cadr (cddr datum)))))
           ([eqv? (car datum) 'while]
             (while-exp (parse-exp (cadr datum)) (map parse-exp (cddr datum))))
+          ([eqv? (car datum) 'set!]
+            (varassign-exp (cadr datum) (map parse-exp (cddr datum))))
           (else 
             (app-exp (parse-exp (car datum))
               (map parse-exp (cdr datum))))))
@@ -130,7 +132,10 @@
         (let-named-exp (name vars values body)
           (let-named-exp name vars values body))
         (letrec-exp (vars values body)
-          (letrec-exp vars values body))
+          (syntax-expand (let-exp vars (make-list (length vars) (lit-exp #f))
+            (list (let-exp (map (lambda (s) (string->symbol (string-append (symbol->string s) "temp"))) vars) values
+                (append (lr-helper vars) (list (let-exp '() '() body))))))))
+          ;(letrec-exp vars values body))
         (let*-exp (vars values body)
            (if (null? vars)
              (syntax-expand (let-exp vars values body))
@@ -161,12 +166,21 @@
         (case-exp (test cases values) 
           (syntax-expand (cond-exp (map 
             (lambda (x)
-              (if (not (equal? 'else (cadr x)) )
+              (if (not (equal? 'else (cadr x)))
                 (app-exp (var-exp 'memq) (list test x))
                 (lit-exp #t))) cases) values)))
         (while-exp (test cases)
           (while-exp (syntax-expand test) (map syntax-expand cases)))
+        (varassign-exp (id exp)
+          (varassign-exp id (syntax-expand exp)))
       )))
+
+(define lr-helper
+  (lambda (vars)
+    (let ((tempvars (map (lambda (s) (string->symbol (string-append (symbol->string s) "temp"))) vars)))
+      (if (null? vars)
+        '()
+        (append (list (varassign-exp (car vars) (var-exp (car tempvars)))) (lr-helper (cdr vars)))))))
 
 (define contains-duplicates?
   (lambda (list)

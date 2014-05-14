@@ -9,8 +9,9 @@
 (define load-tests
     (lambda ()
         ;(load "t15.ss")
-        (load "t16.ss")))
-        (load "mytests.ss")
+        ;(load "t16.ss")
+        (load "t17.ss")
+        (load "mytests.ss")))
 
 (define load-all ; make it easy to reload the files
   (lambda ()

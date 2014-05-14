@@ -1,3 +1,4 @@
+;; Test file for personal tests primarily used in debugging.
 
 (define mytests
 	(lambda ()
