@@ -38,8 +38,8 @@
     (body listed-expression?))
   (let-named-exp
     (let-name symbol?)
-    (vars expression?)
-    (values expression?)
+    (vars list?)
+    (values list?)
     (expression listed-expression?))
   (begin-exp
     (body listed-expression?))

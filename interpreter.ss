@@ -58,7 +58,8 @@
           (void)
           (begin (eval-body cases env) (eval-exp exp env)))]
       [varassign-exp (id e)
-        (set-ref! (apply-env-ref env id (lambda () (eopl: error 'apply-env-ref "variable not found: ~s" id))) (eval-exp e env))]
+        (set-ref! (apply-env-ref env id (lambda () (eopl:error 'apply-env-ref "error occured: ~s" id)))
+          (eval-exp e env))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
