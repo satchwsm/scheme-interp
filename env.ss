@@ -39,7 +39,6 @@
 (define apply-env
   (lambda (env sym succeed fail)
     (let ((ref (apply-env-ref env sym fail)))
-      ;(display ref)
       (deref ref))))
 
 (define empty-env

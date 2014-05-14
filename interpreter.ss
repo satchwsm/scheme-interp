@@ -80,7 +80,7 @@
   atom? length list->vector list? pair? procedure? vector->list vector make-vector
   make-list vector-ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
   display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr
-  void map apply quotient memq))
+  void map apply quotient memq eqv? list-tail append))
 
 ;(define init-env         ; for now, our initial global environment only contains 
 ;  (extend-env            ; procedure names.  Recall that an environment associates
@@ -185,6 +185,9 @@
       [(memq) (memq (1st args) (2nd args))]
       [(map) (map (lambda (x) (apply-proc (car args) (list x) env)) (cadr args))]
       [(apply) (apply-proc (car args) (flatten (cdr args)) env)]
+      [(eqv?) (eqv? (1st args) (2nd args))]
+      [(list-tail) (list-tail (1st args) (2nd args))]
+      [(append) (apply append args)]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))

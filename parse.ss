@@ -132,7 +132,6 @@
         (let-named-exp (name vars values body)
           (syntax-expand (letrec-exp (list name) (list (lambda-exp vars body))
             (list (app-exp (var-exp name) values)))))
-          ;(let-named-exp name vars values body))
         (letrec-exp (vars values body)
           (syntax-expand (let-exp vars (make-list (length vars) (lit-exp #f))
             (list (let-exp (map (lambda (s) (string->symbol (string-append (symbol->string s) "temp"))) vars) values
