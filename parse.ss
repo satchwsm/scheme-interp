@@ -58,8 +58,8 @@
            (letrec-exp (map car (cadr datum))
                  (map parse-exp (map cadr (cadr datum))) 
                  (map parse-exp (cddr datum))))
-          ((eqv? (car datum) 'set!) 
-            (begin (check-set! datum) (set!-exp (cadr datum) (parse-exp (caddr datum)))))
+          ;((eqv? (car datum) 'set!) 
+          ;  (begin (check-set! datum) (set!-exp (cadr datum) (parse-exp (caddr datum)))))
           ([eqv? (car datum) 'begin]
             (begin-exp (map parse-exp (cdr datum))))
           ([eqv? (car datum) 'and]
@@ -75,7 +75,10 @@
           ([eqv? (car datum) 'while]
             (while-exp (parse-exp (cadr datum)) (map parse-exp (cddr datum))))
           ([eqv? (car datum) 'set!]
-            (varassign-exp (cadr datum) (map parse-exp (cddr datum))))
+            ;(varassign-exp (cadr datum) (map parse-exp (cddr datum))))
+            (varassign-exp (cadr datum) (parse-exp (caddr datum))))
+          ([eqv? (car datum) 'define]
+            (define-exp (cadr datum) (parse-exp (caddr datum))))
           (else 
             (app-exp (parse-exp (car datum))
               (map parse-exp (cdr datum))))))
@@ -143,7 +146,7 @@
                 (list (car values)) 
                 (list (syntax-expand (let*-exp (cdr vars) (cdr values) body)))))))
         (quote-exp (data) exp)
-        (set!-exp (id new-id)
+        (set!-exp (id new-id) ; think this is not needed anymore
           (set!-exp id (syntax-expand new-id)))
         (begin-exp (body)
           (app-exp (lambda-exp '() (map syntax-expand body)) '()))
@@ -173,6 +176,8 @@
           (while-exp (syntax-expand test) (map syntax-expand cases)))
         (varassign-exp (id exp)
           (varassign-exp id (syntax-expand exp)))
+        (define-exp (id exp)
+          (define-exp id (syntax-expand exp)))
       )))
 
 (define lr-helper

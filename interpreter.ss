@@ -57,9 +57,19 @@
         (if (not (eval-exp test env))
           (void)
           (begin (eval-body cases env) (eval-exp exp env)))]
-      [varassign-exp (id e)
-        (set-ref! (apply-env-ref env id (lambda () (eopl:error 'apply-env-ref "error occured: ~s" id)))
-          (eval-exp e env))]
+      [varassign-exp (id expr)
+        (set-ref! (apply-env-ref env id (lambda () ; procedure to call if id not in env
+            (apply-env-ref global-env id (lambda ()
+              (eopl:error 'apply-env-ref "variable not found in environment: ~s" id)))))
+          (eval-exp expr env))]
+      [define-exp (id expr)
+        (let ((ref-result (apply-env-ref env id (lambda () #f)))
+              (e-result (eval-exp expr env)))
+          (if ref-result
+            ;(begin (printf "a") (set-ref! ref-result e-result))
+            ;(begin (printf "b") (set! global-env (define-new-cell id e-result)))))]
+            (set-ref! ref-result e-result)
+            (set! global-env (define-new-cell id e-result))))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -222,6 +232,7 @@
 (define identity-proc (lambda (x) x))
 (define void-proc (void))
 (define global-env init-env)
+(define reset-global-env (lambda () (set! global-env init-env)))
 
 
 

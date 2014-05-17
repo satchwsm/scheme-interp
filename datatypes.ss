@@ -60,6 +60,9 @@
   (varassign-exp
     (id symbol?)
     (exp expression?))
+  (define-exp
+    (id symbol?)
+    (exp expression?))
 )
 
 (define listed-expression?

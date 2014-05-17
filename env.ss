@@ -49,6 +49,14 @@
   (lambda (syms cells env)
     (extended-env-record syms cells env)))
 
+(define define-new-cell
+  (lambda (id value)
+    (cases environment global-env
+      (empty-env-record () (eopl:error 'add-new-cell "error occured in add-new-cell: ~s" old-env))
+      (extended-env-record (syms cells e)
+        (let ((s (cons id syms))(v (cons (box value) cells)))
+          (extended-env-record s v e))))))
+
 (define deref
   (lambda (ref)
     (unbox ref)))
