@@ -7,7 +7,7 @@
   (var-exp
     (id symbol?))
   (lambda-exp
-    (id (lambda (x) (or (null? x) (symbol? x) (pair? x))))
+    (id (lambda (x) (or (null? x) (symbol? x) (pair? x) (ref? x))))
     (body listed-expression?))
   (app-exp
     (rator expression?)
@@ -63,7 +63,13 @@
   (define-exp
     (id symbol?)
     (exp expression?))
+  (ref-exp
+    (id symbol?))
 )
+
+(define ref?
+  (lambda (x)
+    (and (list? x) (eqv? 'ref (car x)) (symbol? (cadr x)))))
 
 (define listed-expression?
   (lambda (ls)

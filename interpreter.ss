@@ -70,6 +70,9 @@
             ;(begin (printf "b") (set! global-env (define-new-cell id e-result)))))]
             (set-ref! ref-result e-result)
             (set! global-env (define-new-cell id e-result))))]
+      [ref-exp (id)
+        (apply-env-ref env id (lambda () (apply-env-ref global-env id (lambda ()
+              (eopl:error 'apply-env-ref "variable not found in environment: ~s" id)))))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -114,7 +117,9 @@
     ;(display (list proc-value args))
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args env)]
-      [user-proc (vars body env) 
+      [user-proc (vars body env) ;; TODO - fix args for references
+        ;(printf "---")
+        ;(display args)
         (cond
           ([symbol? vars]
             (let ([new-env (extend-env (list vars) (map box (list args)) env)])

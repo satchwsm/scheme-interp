@@ -19,7 +19,7 @@
               ((not (> (length datum) 2)) (eopl:error 'parse-exp 
                 "Error in parse-exp: lambda expression missing body: ~s" datum))
               ((or (and (not (list? (cadr datum))) (proper-list? (cadr datum)) (not (symbol? (cadr datum)))) 
-                (and (list? (cadr datum)) (not (andmap symbol? (cadr datum))))) (eopl:error 'parse-exp
+                (and (list? (cadr datum)) (and (not (andmap symbol? (cadr datum))) (not (ormap ref? (cadr datum)))))) (eopl:error 'parse-exp
                 "Error in parse-exp: lambda argument list: formals must be symbols: ~s" (cadr datum)))
               ((contains-duplicates? (cadr datum)) 
                 (eopl:error 'parse-exp "Error in parse-exp: lambda variables can not be repeated ~s" datum))
@@ -79,6 +79,8 @@
             (varassign-exp (cadr datum) (parse-exp (caddr datum))))
           ([eqv? (car datum) 'define]
             (define-exp (cadr datum) (parse-exp (caddr datum))))
+          ([eqv? (car datum) 'ref]
+            (ref-exp (cadr datum)))
           (else 
             (app-exp (parse-exp (car datum))
               (map parse-exp (cdr datum))))))
@@ -157,7 +159,7 @@
         (or-exp (conds)
           (if (null? conds)
              (lit-exp #f)
-             (if-alt-exp (car conds) (car conds) (syntax-expand (or-exp (cdr conds))))))
+             (if-alt-exp (syntax-expand (car conds)) (lit-exp #t) (syntax-expand (or-exp (cdr conds))))))
         (cond-exp (cases exps)
           (if (null? (cdr cases))
             (if (eqv? (cadar cases) 'else)
@@ -178,6 +180,7 @@
           (varassign-exp id (syntax-expand exp)))
         (define-exp (id exp)
           (define-exp id (syntax-expand exp)))
+        (ref-exp (id) exp)
       )))
 
 (define lr-helper

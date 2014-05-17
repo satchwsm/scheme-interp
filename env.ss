@@ -47,7 +47,25 @@
 
 (define extend-env
   (lambda (syms cells env)
-    (extended-env-record syms cells env)))
+    (if (and (andmap symbol? syms) (andmap box? cells))
+      (extended-env-record syms cells env)
+      (let ((s (build-syms syms))(c cells))
+        (extended-env-record s c env)))))
+
+(define build-syms
+  (lambda (ls)
+    (if (null? ls)
+      '()
+      (if (ref? (car ls))
+        (append (list (cadr (car ls))) (build-syms (cdr ls)))
+        (append (list (car ls)) (build-syms (cdr ls)))))))
+
+(define build-cells
+  (lambda (ls)
+    (if (null? ls)
+      '()
+      (if (box? (car ls))
+        (append (list (car ls)) '())))))
 
 (define define-new-cell
   (lambda (id value)
