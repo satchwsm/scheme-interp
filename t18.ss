@@ -315,7 +315,7 @@
 			    [b ((lambda ((ref x)) x) a)]) 
 		       (set! b 'foo) a)))
 	     (begin (reset-global-env) 
-		    (eval-one-exp ' (define x '(a a a))) 
+		    (eval-one-exp '(define x '(a a a))) 
 		    (eval-one-exp '(define y '(b b b))) 
 		    (eval-one-exp '(let () 
 				     ((lambda ((ref x) y) 

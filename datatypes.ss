@@ -9,6 +9,9 @@
   (lambda-exp
     (id (lambda (x) (or (null? x) (symbol? x) (pair? x) (ref? x))))
     (body listed-expression?))
+  (lambda-ref-exp
+    (id (lambda (x) (or (null? x) (symbol? x) (pair? x) (ref? x))))
+    (body listed-expression?))
   (app-exp
     (rator expression?)
     (rand listed-expression?))
@@ -103,5 +106,9 @@
   [user-proc
    (vars (lambda (x) (or (list? x) (pair? x) (symbol? x))))
    (body listed-expression?)
-   (env environment?)])
+   (env environment?)]
+  [ref-proc
+    (vars (lambda (x) (or (list? x) (pair? x) (symbol? x) (ref? x))))
+    (body listed-expression?)
+    (env environment?)])
 	

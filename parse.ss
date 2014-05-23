@@ -23,10 +23,10 @@
                 "Error in parse-exp: lambda argument list: formals must be symbols: ~s" (cadr datum)))
               ((contains-duplicates? (cadr datum)) 
                 (eopl:error 'parse-exp "Error in parse-exp: lambda variables can not be repeated ~s" datum))
+              ((ormap ref? (cadr datum))
+                (lambda-ref-exp (cadr datum) (map parse-exp (cddr datum))))
               (else
                 (lambda-exp (cadr datum) (map parse-exp (cddr datum))))))
-                ;(begin (display (cadr datum)) 
-                ;  (lambda-exp (cadr datum) (map parse-exp (cddr datum)))))))
           ((or (eqv? (car datum) 'quote) (eqv? (car datum) #\')) (lit-exp (cadr datum)))
           ((eqv? (car datum) 'if) 
             (cond
@@ -75,7 +75,6 @@
           ([eqv? (car datum) 'while]
             (while-exp (parse-exp (cadr datum)) (map parse-exp (cddr datum))))
           ([eqv? (car datum) 'set!]
-            ;(varassign-exp (cadr datum) (map parse-exp (cddr datum))))
             (varassign-exp (cadr datum) (parse-exp (caddr datum))))
           ([eqv? (car datum) 'define]
             (define-exp (cadr datum) (parse-exp (caddr datum))))
@@ -126,6 +125,8 @@
         (var-exp (id) exp)
         (lambda-exp (id body) 
           (lambda-exp id (map syntax-expand body)))
+        (lambda-ref-exp (id body)
+          (lambda-ref-exp id (map syntax-expand body)))
         (app-exp (rator rand)
           (app-exp (syntax-expand rator) (map syntax-expand rand)))
         (if-exp (test then)

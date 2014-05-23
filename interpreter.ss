@@ -53,21 +53,30 @@
           (apply-proc proc-value args env))]
       [lambda-exp (id body)
         (user-proc id body env)]
+      [lambda-ref-exp (id body)
+        (ref-proc id body env)]
       [while-exp (test cases)
         (if (not (eval-exp test env))
           (void)
           (begin (eval-body cases env) (eval-exp exp env)))]
       [varassign-exp (id expr)
-        (set-ref! (apply-env-ref env id (lambda () ; procedure to call if id not in env
+        (let ((ref (apply-env-ref env id (lambda () ; procedure to call if id not in env
             (apply-env-ref global-env id (lambda ()
-              (eopl:error 'apply-env-ref "variable not found in environment: ~s" id)))))
-          (eval-exp expr env))]
+              (eopl:error 'apply-env-ref "variable not found in environment: ~s" id))))))
+            (res (eval-exp expr env)))
+          (if (and (not (null? (unbox ref))) (list? (unbox ref)) (eqv? (car (unbox ref)) 'ref))
+            (let ((r (apply-env-ref env (cadr (unbox ref)) (lambda () (apply-env-ref global-env (cadr (unbox ref))
+                (eopl:error 'apply-env-ref "variable not found in environment: ~s" id))))))
+              ;(display r)
+              (if (ref? (unbox r))
+                (set-ref! (apply-env-ref env (cadr (unbox r)) (lambda () (apply-env-ref global-env (cadr (unbox r))
+                  (eopl:error 'apply-env-ref "variable not found in environment: ~s" id)))) res)
+                (set-ref! r res)))
+            (set-ref! ref res)))]
       [define-exp (id expr)
         (let ((ref-result (apply-env-ref env id (lambda () #f)))
               (e-result (eval-exp expr env)))
           (if ref-result
-            ;(begin (printf "a") (set-ref! ref-result e-result))
-            ;(begin (printf "b") (set! global-env (define-new-cell id e-result)))))]
             (set-ref! ref-result e-result)
             (set! global-env (define-new-cell id e-result))))]
       [ref-exp (id)
@@ -93,7 +102,7 @@
   atom? length list->vector list? pair? procedure? vector->list vector make-vector
   make-list vector-ref list->ref vector? number? symbol? set-car! set-cdr! vector-set! 
   display newline caar cadr cdar caaar caadr cadar cdaar caddr cdadr cddar cdddr
-  void map apply quotient memq eqv? list-tail append))
+  void map apply quotient memq eqv? list-tail append set-box! unbox box))
 
 ;(define init-env         ; for now, our initial global environment only contains 
 ;  (extend-env            ; procedure names.  Recall that an environment associates
@@ -114,12 +123,10 @@
 
 (define apply-proc
   (lambda (proc-value args env)
-    ;(display (list proc-value args))
+    ;(display env)
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args env)]
-      [user-proc (vars body env) ;; TODO - fix args for references
-        ;(printf "---")
-        ;(display args)
+      [user-proc (vars body env)
         (cond
           ([symbol? vars]
             (let ([new-env (extend-env (list vars) (map box (list args)) env)])
@@ -134,6 +141,11 @@
               (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value) 
               (let ([new-env (extend-env vars (map box args) env)])
                 (car (eval-body body new-env))))))]
+        [ref-proc (vars body env2)
+          (if (not (= (length args) (length vars)))
+              (error 'apply-proc "Incorrect number of arguments for the given variables ~s" proc-value)
+              (let ([new-env (extend-env vars (map box args) env)])
+                (car (eval-body body new-env))))]
       [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
 
 ; Usually an interpreter must define each 
@@ -203,6 +215,9 @@
       [(eqv?) (eqv? (1st args) (2nd args))]
       [(list-tail) (list-tail (1st args) (2nd args))]
       [(append) (apply append args)]
+      [(set-box!) (set-box! (1st args) (2nd args))]
+      [(unbox) (unbox (1st args))]
+      [(box) (box (1st args))]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))

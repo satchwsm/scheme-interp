@@ -38,8 +38,10 @@
 
 (define apply-env
   (lambda (env sym succeed fail)
-    (let ((ref (apply-env-ref env sym fail)))
-      (deref ref))))
+    (let* ((ref (apply-env-ref env sym fail))(res (deref ref)))
+      (if (and (not (null? res)) (list? res) (eqv? 'ref (car res)))
+        (deref (apply-env-ref env (cadr res) fail))
+      res))))
 
 (define empty-env
   (lambda ()
@@ -49,8 +51,17 @@
   (lambda (syms cells env)
     (if (and (andmap symbol? syms) (andmap box? cells))
       (extended-env-record syms cells env)
-      (let ((s (build-syms syms))(c cells))
+      (let* ((s (build-syms syms))(positions (find-ref-in-syms syms))(c (build-cells s cells positions env)))
         (extended-env-record s c env)))))
+
+(define find-ref-in-syms
+  (lambda (ls)
+    (let loop ((l ls)(pos 0))
+      (if (null? l)
+        '()
+        (if (ref? (car l))
+          (append (list pos) (loop (cdr l) (+ pos 1)))
+          (append (list -1) (loop (cdr l) (+ pos 1))))))))
 
 (define build-syms
   (lambda (ls)
@@ -61,11 +72,26 @@
         (append (list (car ls)) (build-syms (cdr ls)))))))
 
 (define build-cells
-  (lambda (ls)
-    (if (null? ls)
+  (lambda (syms cells lop env)
+    (if (null? syms)
       '()
-      (if (box? (car ls))
-        (append (list (car ls)) '())))))
+      (if (eqv? (car lop) -1)
+        (append (list (car cells)) (build-cells (cdr syms) (cdr cells) (cdr lop) env))
+      (append (list (box (list 'ref 
+        (look-up-id (car cells) env)))) 
+        (build-cells (cdr syms) (cdr cells) (cdr lop) env))))))
+
+(define look-up-id
+  (lambda (b-value env)
+    (cases environment env
+      (empty-env-record () (look-up-id b-value global-env))
+      (extended-env-record (syms cells e)
+        (let loop ((s syms)(c cells))
+          (if (null? s)
+            (look-up-id b-value e)
+            (if (eqv? (unbox (car c)) (unbox b-value))
+              (car s)
+              (loop (cdr s) (cdr c)))))))))
 
 (define define-new-cell
   (lambda (id value)
