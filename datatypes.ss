@@ -66,8 +66,6 @@
   (define-exp
     (id symbol?)
     (exp expression?))
-  (ref-exp
-    (id symbol?))
 )
 
 (define ref?
@@ -82,13 +80,6 @@
 
 (define scheme-value?
   (lambda (x) #t))
-
-;(define-datatype environment environment?
-;  (empty-env-record)
-;  (extended-env-record
-;   (syms (list-of symbol?))
-;   (vals (list-of scheme-value?))
-;   (env environment?)))
    	
 (define-datatype environment environment?
   (empty-env-record)
@@ -110,5 +101,43 @@
   [ref-proc
     (vars (lambda (x) (or (list? x) (pair? x) (symbol? x) (ref? x))))
     (body listed-expression?)
-    (env environment?)])
+    (env environment?)]
+  [continuation-proc
+    (k continuation?)])
 	
+; Continuation datatype
+(define-datatype continuation continuation?
+  [repl-k]
+  [lit-k 
+    (datum scheme-value?)]
+  [var-k 
+    (datum symbol?)]
+  [test-k
+    (then-exp expression?)
+    (else-exp expression?)
+    (env environment?)
+    (k continuation?)]
+  [rator-k
+    (rands (list-of expression?))
+    (env environment?)
+    (k continuation?)]
+  [rands-k
+    (proc-value scheme-value?)
+    (env environment?)
+    (k continuation?)]
+  [let-rands-k 
+    (body expression?)
+    (vars (list-of symbol?))
+    (env environment?)
+    (k continuation?)]
+  [env-k 
+    (body expression?)
+    (k continuation?)]
+  [eval-rands-k
+    (rands (list-of expression?))
+    (env environment?)
+    (k continuation?)]
+  [cons-k
+    (item scheme-value?)
+    (k continuation?)]
+)

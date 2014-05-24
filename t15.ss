@@ -132,21 +132,21 @@
 	     (eval-one-exp ' 
 	      (let ([a 3][b 5]) 
 		(+ a b)))
-(eval-one-exp ' 
- (let ([a 3]) 
-   (let ([b 2] [c (+ a 3)] [a (+ a a)]) 
-     (+ a b c))))
-(eval-one-exp ' 
- (let ([a 3]) 
-   (let ([a (let ([a (+ a a)]) 
-	      (+ a a))]) 
-     (+ a a))))
-(eval-one-exp ' 
- (let ([a (list 3 4)]) 
-   (set-car! a 2) 
-   (set-cdr! a (cadr a)) 
-   a))
-)])
+		(eval-one-exp ' 
+		 (let ([a 3]) 
+		   (let ([b 2] [c (+ a 3)] [a (+ a a)]) 
+		     (+ a b c))))
+		(eval-one-exp ' 
+		 (let ([a 3]) 
+		   (let ([a (let ([a (+ a a)]) 
+			      (+ a a))]) 
+		     (+ a a))))
+		(eval-one-exp ' 
+		 (let ([a (list 3 4)]) 
+		   (set-car! a 2) 
+		   (set-cdr! a (cadr a)) 
+		   a))
+		)])
       (display-results correct answers equal?)))
 
 (define (test-lambda)
@@ -170,15 +170,15 @@
 									(f (+ 3 a b))))) 
 	       56 17))
 	     (eval-one-exp '
-(((lambda (f)
-   ((lambda (x) (f (lambda (y) ((x x) y))))
-    (lambda (x) (f (lambda (y) ((x x) y))))))
-  (lambda (g)
-    (lambda (n)
-      (if (zero? n)
-          1
-          (* n (g (- n 1)))))))
-   6))
+		(((lambda (f)
+		   ((lambda (x) (f (lambda (y) ((x x) y))))
+		    (lambda (x) (f (lambda (y) ((x x) y))))))
+		  (lambda (g)
+		    (lambda (n)
+		      (if (zero? n)
+		          1
+		          (* n (g (- n 1)))))))
+		   6))
 	     (eval-one-exp ' 
 	      (let ([Y (lambda (f) 
 			 ((lambda (x) 

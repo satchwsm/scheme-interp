@@ -37,11 +37,11 @@
 ;	         (apply-env e sym succeed fail)))))))
 
 (define apply-env
-  (lambda (env sym succeed fail)
+  (lambda (env sym k fail)
     (let* ((ref (apply-env-ref env sym fail))(res (deref ref)))
       (if (and (not (null? res)) (list? res) (eqv? 'ref (car res)))
         (deref (apply-env-ref env (cadr res) fail))
-      res))))
+      (apply-k k res)))))
 
 (define empty-env
   (lambda ()

@@ -78,8 +78,6 @@
             (varassign-exp (cadr datum) (parse-exp (caddr datum))))
           ([eqv? (car datum) 'define]
             (define-exp (cadr datum) (parse-exp (caddr datum))))
-          ([eqv? (car datum) 'ref]
-            (ref-exp (cadr datum)))
           (else 
             (app-exp (parse-exp (car datum))
               (map parse-exp (cdr datum))))))
@@ -181,7 +179,6 @@
           (varassign-exp id (syntax-expand exp)))
         (define-exp (id exp)
           (define-exp id (syntax-expand exp)))
-        (ref-exp (id) exp)
       )))
 
 (define lr-helper

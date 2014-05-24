@@ -11,7 +11,8 @@
         ;(load "t15.ss")
         ;(load "t16.ss")
         ;(load "t17.ss")
-        (load "t18.ss")
+        ;(load "t18.ss")
+        (load "t19.ss")
         (load "mytests.ss")))
 
 (define load-all ; make it easy to reload the files
